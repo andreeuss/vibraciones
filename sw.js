@@ -1,4 +1,4 @@
-const CACHE = 'coordinador-vibraciones-v1.0.0';
+const CACHE_NAME = 'vibraciones-v1.1.1-fix';
 const ASSETS = [
   './',
   './index.html',

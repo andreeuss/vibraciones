@@ -36,3 +36,9 @@ La aplicación incluye `manifest.webmanifest`, `service worker` e iconos 192/512
 - Si hay un borrador generado, permite consultarlo antes de guardarlo.
 - La fecha de reunión abre por defecto en la fecha local actual.
 - Service worker actualizado para priorizar la versión publicada y reducir problemas de caché al actualizar la PWA.
+
+
+## v1.2.1
+- Regla estricta: nadie puede repetir la misma actividad ordinaria del miércoles inmediatamente anterior.
+- Se incorpora la programación real del 12/08/2026 como referencia inicial para la rotación.
+- Las asignaciones manuales tampoco permiten repetir la misma tarea de la semana anterior.

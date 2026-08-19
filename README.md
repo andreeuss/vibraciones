@@ -28,3 +28,11 @@ La información se conserva en el almacenamiento local del navegador del disposi
 ## PWA
 
 La aplicación incluye `manifest.webmanifest`, `service worker` e iconos 192/512 para permitir su instalación en dispositivos compatibles una vez publicada mediante HTTPS (GitHub Pages).
+
+## Versión 1.2.0
+- Nueva vista **Listado del miércoles** para consulta durante la reunión.
+- Muestra actividades y responsables en modo solo lectura, optimizado para celular.
+- Recupera automáticamente la programación guardada del miércoles seleccionado.
+- Si hay un borrador generado, permite consultarlo antes de guardarlo.
+- La fecha de reunión abre por defecto en la fecha local actual.
+- Service worker actualizado para priorizar la versión publicada y reducir problemas de caché al actualizar la PWA.

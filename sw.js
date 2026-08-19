@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vibraciones-v1.1.1-fix';
+const CACHE = 'coordinador-vibraciones-v1.2.0';
 const ASSETS = [
   './',
   './index.html',
@@ -22,6 +22,14 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    fetch(event.request)
+      .then(response => {
+        const copy = response.clone();
+        if (response.ok && new URL(event.request.url).origin === self.location.origin) {
+          caches.open(CACHE).then(cache => cache.put(event.request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html')))
   );
 });

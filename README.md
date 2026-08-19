@@ -1,44 +1,17 @@
-# Coordinador de Vibraciones
+# Coordinador de Vibraciones v2.0.0
 
-Aplicación web/PWA minimalista para organizar la programación semanal de la reunión de vibraciones y generar el mensaje listo para WhatsApp.
+Aplicación PWA para organizar la reunión espírita de los miércoles.
 
-## Publicación con GitHub Pages
-
-1. Crea un repositorio público en GitHub.
-2. Sube **el contenido de esta carpeta directamente a la raíz del repositorio**.
-3. En GitHub abre **Settings → Pages**.
-4. En **Build and deployment**, selecciona **Deploy from a branch**.
-5. Selecciona la rama **main** y la carpeta **/(root)**.
-6. Pulsa **Save**.
-7. Espera a que GitHub muestre la dirección publicada y ábrela desde el celular.
-
-## Uso
-
-- Selecciona las personas que participan ese miércoles.
-- Define si existe paciente trabajador y, cuando aplique, selecciona `Paciente trabajador GENE` y `Vibración por trabajador`.
-- Genera la programación.
-- Revisa la actividad del miércoles anterior cuando lo necesites.
-- Genera el mensaje para WhatsApp y compártelo.
-- Al confirmar y guardar la reunión, el libro avanza al capítulo siguiente.
-
-## Datos
-
-La información se conserva en el almacenamiento local del navegador del dispositivo. No requiere servidor ni base de datos en esta versión.
-
-## PWA
-
-La aplicación incluye `manifest.webmanifest`, `service worker` e iconos 192/512 para permitir su instalación en dispositivos compatibles una vez publicada mediante HTTPS (GitHub Pages).
-
-## Versión 1.2.0
-- Nueva vista **Listado del miércoles** para consulta durante la reunión.
-- Muestra actividades y responsables en modo solo lectura, optimizado para celular.
-- Recupera automáticamente la programación guardada del miércoles seleccionado.
-- Si hay un borrador generado, permite consultarlo antes de guardarlo.
-- La fecha de reunión abre por defecto en la fecha local actual.
-- Service worker actualizado para priorizar la versión publicada y reducir problemas de caché al actualizar la PWA.
-
-
-## v1.2.1
-- Regla estricta: nadie puede repetir la misma actividad ordinaria del miércoles inmediatamente anterior.
-- Se incorpora la programación real del 12/08/2026 como referencia inicial para la rotación.
-- Las asignaciones manuales tampoco permiten repetir la misma tarea de la semana anterior.
+## Motor v2.0
+- Rotación circular de ocho actividades.
+- Desplazamiento global normal +1.
+- Si Anita Suárez cae en Pan Nuestro, la rueda avanza globalmente +2.
+- No se permite repetir ni retroceder respecto al miércoles inmediatamente anterior.
+- Cola de descanso/reingreso cuando sobran participantes.
+- Quien hizo Oración final tiene prioridad de descanso cuando debe salir una persona.
+- Paciente trabajador GENE y Vibración por trabajador se seleccionan cada miércoles.
+- Opción para vincular Vibración por trabajador con Lectura del Evangelio.
+- Héctor mantiene Lectura de pacientes y entra a la rotación ordinaria solo como apoyo o por asignación manual.
+- Asignaciones manuales con reorganización del resto.
+- Auditoría previa al mensaje de WhatsApp.
+- Vista de consulta “Listado del miércoles”.

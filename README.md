@@ -1,14 +1,14 @@
-# Coordinador de Vibraciones — v2.1.0
+# Coordinador de Vibraciones v3.0.0
 
-Aplicación PWA para organizar la programación semanal de la reunión espírita de los miércoles.
+Aplicación web/PWA para organizar la programación semanal de la reunión espírita de los miércoles.
 
-## v2.1.0
-- Título consecutivo de Pan Nuestro cargado correctamente desde `chapters.js`.
-- Las responsabilidades especiales de Héctor no alteran la rueda ordinaria.
-- Si Héctor realiza Vibración por trabajador, Evangelio permanece en la rotación normal.
-- Anita Suárez salta Pan Nuestro según su restricción y la rueda aplica el desplazamiento correspondiente.
-- La vinculación Vibración por trabajador + Evangelio permanece disponible para responsables distintos de Héctor.
-- Auditoría técnica interna y transparente: no se muestra panel de auditoría al coordinador.
-- Cola de descanso y reingreso.
-- Vista de consulta del listado del miércoles.
-- Mensaje de WhatsApp con el orden correcto y formato legible.
+## v3.0
+- Selección de capítulo por lista desplegable con número y título automáticos.
+- El capítulo seleccionado se incorpora automáticamente al listado y al mensaje de WhatsApp.
+- Paciente trabajador configurable: puede quedar solo como paciente o participar además en actividades habilitadas.
+- La programación muestra debajo de cada responsable su actividad ordinaria del miércoles anterior.
+- Registro separado de **programado** y **realizado** para manejar sustituciones de último minuto.
+- La rotación siguiente usa lo realmente realizado en las ocho actividades ordinarias.
+- Las responsabilidades especiales no alteran la posición ordinaria de una persona.
+- Anita Suárez continúa excluida de la lectura del libro.
+- Vista móvil plegable, listado del miércoles y generación de mensaje para WhatsApp.

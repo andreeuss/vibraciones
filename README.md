@@ -1,4 +1,4 @@
-# Coordinador de Vibraciones — v4.0.0
+# Coordinador de Vibraciones — v4.1.0
 
 PWA para preparar y compartir la programación semanal de la reunión de vibraciones.
 
@@ -24,3 +24,9 @@ La interfaz se simplificó a cinco bloques operativos:
 5. Mensaje para WhatsApp.
 
 Se retiraron de la operación diaria los listados duplicados, los botones Reorganizar restantes / Restablecer rotación y el registro de lo realizado como fuente de la siguiente rotación.
+
+## v4.1
+- Héctor puede realizar Vibración por trabajador y, si se marca la opción, también Evangelio.
+- Si Héctor ocupa Evangelio, la rueda regular reduce automáticamente un cupo y aplica el descanso correspondiente.
+- Validación dura para impedir repetir la misma actividad ordinaria del miércoles anterior.
+- La rotación sigue tomando como antecedente lo programado, aunque una persona finalmente no haya asistido.

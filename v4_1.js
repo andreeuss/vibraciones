@@ -1,4 +1,4 @@
-/* Coordinador de Vibraciones v4.1.0 */
+/* Coordinador de Vibraciones v4.1.1 */
 function syncWorkerRule(){
   if(!state.hasPatient)return;
   const worker=$('worker').value;
@@ -158,3 +158,89 @@ function validateSchedule(){
 }
 
 syncWorkerRule();
+
+
+/* v4.1.1 — referencia por actividad: muestra quién hizo ESA tarea la semana anterior */
+function renderProgram(){
+  $('programCard').classList.remove('hidden');
+  $('errorBox').textContent=state.error;
+  $('errorBox').classList.toggle('hidden',!state.error);
+
+  if(!state.schedule){
+    $('program').innerHTML='';
+    $('rotationNotes').innerHTML='';
+    return;
+  }
+
+  const prev=previousMeeting();
+  const linkedWorker=state.hasPatient&&$('worker').value!=='Hector'&&$('linkEv').checked?$('worker').value:
+    (state.hasPatient&&$('worker').value==='Hector'&&$('linkEv').checked?'Hector':null);
+
+  let html=ORDINARY.map(t=>{
+    const name=state.schedule[t.id];
+    const previousResponsible=prev?.ordinary?.[t.id]||'—';
+    const isLinked=t.id==='evangelio'&&linkedWorker===name;
+
+    return `<div class="row">
+      <div class="task">
+        ${taskLabel(t.id)}
+        <small>${previousResponsible}</small>
+      </div>
+      <select data-task="${t.id}" ${isLinked?'disabled':''}>${selectOptions(t.id,name)}</select>
+    </div>`;
+  }).join('');
+
+  if(state.hasPatient){
+    const prevPatient=prev?.specials?.patientWorker||'—';
+    const prevWorker=prev?.specials?.workerVibration||'—';
+
+    html+=`<div class="row">
+      <div class="task">PACIENTE TRABAJADOR GENE<small>${prevPatient}</small></div>
+      <div class="responsible">${$('patient').value}</div>
+    </div>`;
+
+    html+=`<div class="row">
+      <div class="task">VIBRACIÓN POR TRABAJADOR<small>${prevWorker}</small></div>
+      <div class="responsible">${$('worker').value}</div>
+    </div>`;
+  }
+
+  const prevReading=prev?.specials?.readingPatients||'Hector';
+  html+=`<div class="row">
+    <div class="task">LECTURA DE PACIENTES<small>${prevReading}</small></div>
+    <div class="responsible">Hector</div>
+  </div>`;
+
+  $('program').innerHTML=html;
+
+  document.querySelectorAll('#program select[data-task]').forEach(sel=>{
+    sel.addEventListener('change',()=>{
+      const task=sel.dataset.task;
+      const chosen=sel.value;
+      const previousSchedule={...state.schedule};
+      const oldLocks={...state.manualLocks};
+
+      for(const [t,n] of Object.entries(state.manualLocks)){
+        if(n===chosen&&t!==task)delete state.manualLocks[t];
+      }
+      state.manualLocks[task]=chosen;
+
+      const ok=computeSchedule({resetManual:false});
+      if(!ok){
+        state.manualLocks=oldLocks;
+        state.schedule=previousSchedule;
+        const msg=state.error||'No fue posible aplicar ese cambio.';
+        state.error='';
+        renderProgram();
+        toast(msg);
+      }else{
+        $('messageCard').classList.add('hidden');
+      }
+    });
+  });
+
+  const notes=[];
+  if(state.resting.length)notes.push(`<div class="note"><b>Descansa esta semana:</b> ${state.resting.join(', ')}</div>`);
+  if(state.reentered.length)notes.push(`<div class="note"><b>Reingresa esta semana:</b> ${state.reentered.join(', ')}</div>`);
+  $('rotationNotes').innerHTML=notes.join('');
+}

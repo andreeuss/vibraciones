@@ -1,32 +1,26 @@
-# Coordinador de Vibraciones — v4.1.0
+# Coordinador de Vibraciones — v5.0.0
 
 PWA para preparar y compartir la programación semanal de la reunión de vibraciones.
 
-## Reglas principales
-- Rotación ordinaria: Oración inicio → Pan Nuestro → Evangelio → Vibración física → Vibración espiritual → Vibración familias → Vibración general → Oración final.
-- La rotación de la semana siguiente toma como referencia **lo programado**, aunque una persona finalmente no haya podido asistir.
-- Anita Suarez no realiza Pan Nuestro; cuando su turno llega a esa actividad, la rueda avanza una posición adicional.
-- No se permite repetir la misma actividad ordinaria del miércoles anterior.
-- Paciente trabajador y Vibración por trabajador son responsabilidades especiales.
-- El paciente puede quedar solo como paciente o habilitarse para actividades ordinarias seleccionadas.
-- Quien realiza Vibración por trabajador puede vincularse a Evangelio cuando la restricción de rotación lo permite.
-- Héctor mantiene Lectura de pacientes y puede apoyar una actividad ordinaria cuando hace falta o cuando se asigna manualmente.
-- Cuando sobran personas, se conserva la lógica de descanso y reingreso.
-- El capítulo del libro avanza automáticamente a partir de la última programación guardada.
-- Generar el mensaje guarda automáticamente la programación del miércoles.
+## Motor de rotación
+- Secuencia ordinaria: Oración inicio → Pan Nuestro → Evangelio → Vibración física → Vibración espiritual → Vibración familias → Vibración general → Oración final.
+- La referencia siempre es la programación del miércoles anterior, aunque una persona finalmente no haya podido asistir.
+- Ninguna persona puede repetir la misma actividad ordinaria ni retroceder a una actividad anterior de su ciclo.
+- El reinicio después de Oración final continúa hacia el comienzo de un nuevo ciclo.
+- Anita Suarez no realiza Pan Nuestro; cuando su turno cae allí se conserva la regla especial de avance de la rueda.
+- El motor prioriza el siguiente turno válido y solo salta hacia adelante cuando las restricciones lo requieren.
 
-## Interfaz v4
-La interfaz se simplificó a cinco bloques operativos:
-1. Reunión y lectura.
-2. Participantes.
-3. Paciente trabajador.
-4. Programación de hoy.
-5. Mensaje para WhatsApp.
+## Pacientes trabajadores — v5
+- Se pueden registrar hasta dos pacientes trabajadores.
+- El Paciente 2 es opcional, por lo que la aplicación sigue funcionando con uno solo.
+- Para cada paciente se define de manera independiente si queda solamente como paciente o si además realiza una actividad ordinaria.
+- Si realiza actividad, se selecciona una actividad exacta.
+- El selector bloquea tareas que impliquen repetir, retroceder o asignar Pan Nuestro a Anita Suarez.
+- Dos pacientes no pueden ocupar la misma actividad ordinaria.
+- El responsable de Vibración por trabajador puede realizar también Evangelio únicamente cuando la progresión de su rotación lo permite.
 
-Se retiraron de la operación diaria los listados duplicados, los botones Reorganizar restantes / Restablecer rotación y el registro de lo realizado como fuente de la siguiente rotación.
-
-## v4.1
-- Héctor puede realizar Vibración por trabajador y, si se marca la opción, también Evangelio.
-- Si Héctor ocupa Evangelio, la rueda regular reduce automáticamente un cupo y aplica el descanso correspondiente.
-- Validación dura para impedir repetir la misma actividad ordinaria del miércoles anterior.
-- La rotación sigue tomando como antecedente lo programado, aunque una persona finalmente no haya asistido.
+## Operación
+- Debajo de cada actividad se muestra solo el nombre de quien realizó esa misma actividad el miércoles anterior.
+- Los cambios manuales recalculan las demás tareas automáticamente.
+- Generar el mensaje guarda la programación como antecedente del siguiente miércoles.
+- El capítulo del libro avanza automáticamente y puede cambiarse mediante una lista con número y título.

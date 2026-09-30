@@ -13,17 +13,40 @@
 </head>
 <body>
 <div class="app">
-<header><div class="ver">Versión 4.1.1</div><h1>Coordinador de Vibraciones</h1><div class="sub">Programa la reunión del miércoles y comparte el listado en pocos pasos.</div></header>
+<header><div class="ver">Versión 5.0.0</div><h1>Coordinador de Vibraciones</h1><div class="sub">Programa la reunión del miércoles con rotación progresiva y hasta dos pacientes trabajadores.</div></header>
 <details class="card" open><summary>Reunión y lectura</summary><div class="body"><div class="grid2"><div><label>Fecha de la reunión</label><input id="date" type="date"></div><div><label>Libro de lectura</label><select id="book"></select></div></div><div class="chapter"><b id="chNo">1</b><div><div class="muted" id="bookName">Pan Nuestro</div><strong id="chTitle"></strong></div></div><div class="actions"><button class="btn ghost" id="changeChapter" type="button">Cambiar capítulo</button><button class="btn ghost" id="addBook" type="button">Agregar otro libro</button></div><div id="chapterEdit" class="hidden" style="margin-top:10px"><label>Capítulo</label><select id="chapterSelect"></select></div><div id="bookEdit" class="hidden" style="margin-top:10px"><label>Nombre del nuevo libro</label><input id="newBookName" placeholder="Ej. Fuente Viva"><label style="margin-top:8px">Capítulos — un título por línea, en orden</label><textarea id="newBookChapters" rows="5" placeholder="Capítulo 1&#10;Capítulo 2&#10;Capítulo 3"></textarea><button class="btn secondary" id="saveBook" type="button" style="margin-top:7px">Guardar libro</button></div></div></details>
 <details class="card" open><summary>¿Quiénes participan hoy?</summary><div class="body"><div id="people" class="people"></div></div></details>
-<details class="card"><summary>Paciente trabajador</summary><div class="body"><div class="segment"><button id="pNo" class="active" type="button">No</button><button id="pYes" type="button">Sí</button></div><div id="patientFields" class="grid2 hidden" style="margin-top:10px"><div><label>Paciente trabajador GENE</label><select id="patient"></select></div><div><label>Vibración por trabajador</label><select id="worker"></select></div></div><div id="patientExtraWrap" class="hidden" style="margin-top:10px"><label class="person"><input id="patientExtra" type="checkbox"><span class="name">El paciente puede realizar además una actividad</span></label><div id="patientAllowed" class="hidden"><div class="muted" style="font-size:12px;margin-top:7px">Marca las actividades que podría realizar hoy.</div><div id="patientAllowedList" class="option-list"></div></div></div><label id="linkWrap" class="person hidden" style="margin-top:10px"><input id="linkEv" type="checkbox" checked><span class="name">Quien realiza Vibración por trabajador también realiza Lectura del Evangelio</span></label><div id="linkHint" class="muted hidden" style="font-size:12px;margin-top:6px"></div></div></details>
+<details class="card"><summary>Pacientes trabajadores</summary><div class="body">
+<div class="segment"><button id="pNo" class="active" type="button">No</button><button id="pYes" type="button">Sí</button></div>
+<div id="patientArea" class="hidden">
+  <div class="patient-card" style="border:1px solid var(--line);border-radius:13px;padding:12px;margin-top:10px;background:#fff">
+    <div style="font-weight:800;margin-bottom:9px">Paciente trabajador 1</div>
+    <label>Persona</label><select id="patient1"></select>
+    <label class="person" style="margin-top:9px"><input id="patient1Ordinary" type="checkbox"><span class="name">Realiza además una actividad ordinaria</span></label>
+    <div id="patient1TaskWrap" class="hidden" style="margin-top:9px"><label>Actividad</label><select id="patient1Task"></select><div id="patient1Hint" class="muted" style="font-size:12px;margin-top:5px"></div></div>
+  </div>
+
+  <div class="patient-card" style="border:1px solid var(--line);border-radius:13px;padding:12px;margin-top:10px;background:#fff">
+    <div style="font-weight:800;margin-bottom:9px">Paciente trabajador 2</div>
+    <label>Persona</label><select id="patient2"></select>
+    <label class="person" style="margin-top:9px"><input id="patient2Ordinary" type="checkbox"><span class="name">Realiza además una actividad ordinaria</span></label>
+    <div id="patient2TaskWrap" class="hidden" style="margin-top:9px"><label>Actividad</label><select id="patient2Task"></select><div id="patient2Hint" class="muted" style="font-size:12px;margin-top:5px"></div></div>
+  </div>
+
+  <div class="patient-card" style="border:1px solid var(--line);border-radius:13px;padding:12px;margin-top:10px;background:#fff">
+    <div style="font-weight:800;margin-bottom:9px">Vibración por trabajador</div>
+    <label>Responsable</label><select id="worker"></select>
+    <label class="person" style="margin-top:9px"><input id="linkEv" type="checkbox"><span class="name">También realiza Lectura del Evangelio</span></label>
+    <div id="linkHint" class="muted" style="font-size:12px;margin-top:5px"></div>
+  </div>
+</div>
+</div></details>
 <button id="generate" class="btn primary wide" type="button">GENERAR PROGRAMACIÓN</button>
-<details id="programCard" class="card hidden" open><summary>Programación de hoy</summary><div class="body"><div id="errorBox" class="error hidden"></div><div class="muted" style="font-size:12px;margin-bottom:6px">La actividad anterior aparece debajo de cada responsable. Si cambias una persona, las demás tareas se ajustan automáticamente.</div><div id="program"></div><div id="rotationNotes"></div><div class="actions"><button id="makeMsg" class="btn primary" type="button">Generar mensaje</button></div></div></details>
+<details id="programCard" class="card hidden" open><summary>Programación de hoy</summary><div class="body"><div id="errorBox" class="error hidden"></div><div class="muted" style="font-size:12px;margin-bottom:6px">Debajo de cada actividad aparece únicamente quién la realizó el miércoles anterior. La programación nunca repite ni retrocede.</div><div id="program"></div><div id="rotationNotes"></div><div class="actions"><button id="makeMsg" class="btn primary" type="button">Generar mensaje</button></div></div></details>
 <details id="messageCard" class="card hidden"><summary>Mensaje para WhatsApp</summary><div class="body"><div id="preview" class="preview"></div><div class="actions"><button id="greeting" class="btn secondary" type="button">Otro saludo</button><button id="copy" class="btn ghost" type="button">Copiar</button><button id="share" class="btn primary" type="button">Compartir por WhatsApp</button></div></div></details>
 <div class="footer">La rotación toma como referencia lo programado en el miércoles anterior, aunque una persona finalmente no haya podido asistir.</div>
 </div>
 <div id="toast" class="toast"></div>
 <script src="chapters.js"></script><script src="app.js"></script>
-<script src="v4_1.js"></script>
 </body>
 </html>

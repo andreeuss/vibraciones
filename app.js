@@ -886,26 +886,27 @@ function messageText(){
   const greeting=GREETINGS[state.greeting%GREETINGS.length];
   const blocks=[];
 
-  blocks.push('*ORACIÓN INICIO*\\n_'+state.schedule.inicio+'_');
-  blocks.push('*'+taskLabel('pan')+'*\\n_'+state.schedule.pan+'_');
-  blocks.push('*LECTURA EVANGELIO - Fragmento*\\n_'+state.schedule.evangelio+'_');
+  blocks.push('*ORACIÓN INICIO*\n_'+state.schedule.inicio+'_');
+  blocks.push('*'+taskLabel('pan')+'*\n_'+state.schedule.pan+'_');
+  blocks.push('*LECTURA EVANGELIO - Fragmento*\n_'+state.schedule.evangelio+'_');
 
   if(state.hasPatients){
     const pats=currentPatients();
-    if(pats.length===1){
-      blocks.push('*PACIENTE TRABAJADOR GENE*\\n_'+pats[0].name+'_');
-    }else if(pats.length===2){
-      blocks.push('*PACIENTES TRABAJADORES GENE*\\n_'+pats[0].name+'_\\n_'+pats[1].name+'_');
+    if(pats.length>=1){
+      blocks.push('*PACIENTE TRABAJADOR GENE 1*\n_'+pats[0].name+'_');
     }
-    blocks.push('*VIBRACIÓN POR TRABAJADOR*\\n_'+$('worker').value+'_');
+    if(pats.length===2){
+      blocks.push('*PACIENTE TRABAJADOR GENE 2*\n_'+pats[1].name+'_');
+    }
+    blocks.push('*VIBRACIÓN POR TRABAJADOR*\n_'+$('worker').value+'_');
   }
 
-  blocks.push('*LECTURA DE PACIENTES*\\n_Hector_');
+  blocks.push('*LECTURA DE PACIENTES*\n_Hector_');
   ['fisica','espiritual','familias','general','final'].forEach(function(t){
-    blocks.push('*'+taskLabel(t)+'*\\n_'+state.schedule[t]+'_');
+    blocks.push('*'+taskLabel(t)+'*\n_'+state.schedule[t]+'_');
   });
 
-  return greeting+'\\n\\n'+blocks.join('\\n\\n')+'\\n\\n\\n*Nos vemos hoy a las 6:55.*\\n\\nBendiciones';
+  return greeting+'\n\n'+blocks.join('\n\n')+'\n\n\n*Nos vemos hoy a las 6:55.*\n\nBendiciones';
 }
 
 function generateMessage(){
@@ -935,7 +936,7 @@ function clearGenerated(){
 
 function addBook(){
   const name=$('newBookName').value.trim();
-  const lines=$('newBookChapters').value.split('\\n').map(function(x){return x.trim();}).filter(Boolean);
+  const lines=$('newBookChapters').value.split('\n').map(function(x){return x.trim();}).filter(Boolean);
   if(!name||!lines.length){
     toast('Escribe el nombre del libro y al menos un capítulo.');
     return;

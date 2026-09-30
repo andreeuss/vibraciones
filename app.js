@@ -795,12 +795,12 @@ function renderProgram(){
 
   if(state.hasPatients){
     const pats=currentPatients();
-    const prevPatients=previousPatientsLabel(prev);
+    const prevPats=normalizePatients(prev);
     if(pats[0]){
-      html+='<div class="row"><div class="task">PACIENTE TRABAJADOR GENE 1<small>'+prevPatients+'</small></div><div class="responsible">'+pats[0].name+'</div></div>';
+      html+='<div class="row"><div class="task">PACIENTE TRABAJADOR GENE 1<small>'+((prevPats[0]&&prevPats[0].name)||'—')+'</small></div><div class="responsible">'+pats[0].name+'</div></div>';
     }
     if(pats[1]){
-      html+='<div class="row"><div class="task">PACIENTE TRABAJADOR GENE 2<small>'+prevPatients+'</small></div><div class="responsible">'+pats[1].name+'</div></div>';
+      html+='<div class="row"><div class="task">PACIENTE TRABAJADOR GENE 2<small>'+((prevPats[1]&&prevPats[1].name)||'—')+'</small></div><div class="responsible">'+pats[1].name+'</div></div>';
     }
     const prevWorker=(prev&&prev.specials&&prev.specials.workerVibration)||'—';
     html+='<div class="row"><div class="task">VIBRACIÓN POR TRABAJADOR<small>'+prevWorker+'</small></div><div class="responsible">'+$('worker').value+'</div></div>';

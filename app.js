@@ -132,6 +132,10 @@ function previousMeeting(){
 }
 
 function oldTask(prev,name){
+  const specials=prev&&prev.specials;
+  if(specials&&specials.workerVibration===name&&specials.workerRotationTask){
+    return specials.workerRotationTask;
+  }
   const entries=Object.entries((prev&&prev.ordinary)||{});
   const found=entries.find(function(entry){return entry[1]===name;});
   return found?found[0]:null;
@@ -312,9 +316,9 @@ function refreshSpecialSelects(saved){
   else if(list.length)$('worker').value=list[0];
 
   syncPatientChoices();
+  syncWorkerRule();
   refreshPatientTaskOptions(1);
   refreshPatientTaskOptions(2);
-  syncWorkerRule();
 }
 
 function previewShift(){
@@ -333,16 +337,7 @@ function previewShift(){
 function canProgress(name,task,shift){
   if(!name||!task)return true;
   if(person(name).noPan&&task==='pan')return false;
-  const prev=previousMeeting();
-  const old=oldTask(prev,name);
-  if(!old)return true;
-  const oldIndex=idx(old),newIndex=idx(task);
-  if(oldIndex<0||newIndex<0)return true;
-  const minAbs=oldIndex+shift;
-  if(minAbs<ORDINARY.length){
-    return newIndex>=minAbs;
-  }
-  return newIndex>=(minAbs%ORDINARY.length);
+  return allowedByProgress(previousMeeting(),name,task,shift);
 }
 
 function progressReason(name,task,shift){
@@ -366,7 +361,7 @@ function refreshPatientTaskOptions(i){
   const select=$('patient'+i+'Task');
   const oldValue=select.value;
   select.innerHTML=ORDINARY.map(function(t){
-    const reason=progressReason(name,t.id,shift);
+    const reason=isWorkerReading(name,t.id)?'':progressReason(name,t.id,shift);
     return '<option value="'+t.id+'" '+(reason?'disabled':'')+'>'+t.label+(reason?' — '+reason:'')+'</option>';
   }).join('');
 
@@ -381,19 +376,19 @@ function refreshPatientTaskOptions(i){
   $('patient'+i+'Hint').textContent=old?('Anterior: '+taskShort(old)+'. Solo puede avanzar.'):'Sin actividad ordinaria anterior.';
 }
 
+function workerReadingTask(){
+  return state.hasPatients?$('workerReading').value:'';
+}
+
+function isWorkerReading(name,task){
+  return !!task&&task===workerReadingTask()&&name===$('worker').value;
+}
+
 function syncWorkerRule(){
-  if(!state.hasPatients)return;
-  const worker=$('worker').value;
-  const shift=previewShift();
-  const canEv=canProgress(worker,'evangelio',shift);
-  if(!canEv){
-    $('linkEv').checked=false;
-    $('linkEv').disabled=true;
-    $('linkHint').textContent=worker+' no puede realizar Evangelio esta semana porque implicaría repetir o retroceder.';
-  }else{
-    $('linkEv').disabled=false;
-    $('linkHint').textContent='Si está marcado, '+worker+' realiza Evangelio + Vibración por trabajador.';
-  }
+  const reading=$('workerReading');
+  const noPan=person($('worker').value).noPan;
+  reading.options[1].disabled=!!noPan;
+  if(state.hasPatients&&noPan)reading.value='evangelio';
 }
 
 function loadDateState(){
@@ -413,6 +408,7 @@ function loadDateState(){
   else $('book').value='pan-nuestro';
 
   const patients=normalizePatients(rec);
+  $('workerReading').value='';
   setPatientUI(patients.length>0);
 
   if(state.hasPatients){
@@ -437,19 +433,20 @@ function loadDateState(){
       refreshPatientTaskOptions(2);
     }
     if(rec&&rec.specials&&rec.specials.workerVibration)$('worker').value=rec.specials.workerVibration;
-    $('linkEv').checked=!!(rec&&rec.specials&&rec.specials.evangelioWithVibration);
+    const specials=rec.specials||{};
+    $('workerReading').value=specials.workerReading||(specials.evangelioWithVibration?'evangelio':'');
     syncPatientChoices();
     syncWorkerRule();
   }else{
     $('patient1Ordinary').checked=false;
     $('patient2Ordinary').checked=false;
-    $('linkEv').checked=false;
   }
 
   updateChapter();
 
   if(rec&&rec.ordinary){
     state.schedule=Object.assign({},rec.ordinary);
+    state.shift=determineShift(previousMeeting(),Object.values(state.schedule));
     state.resting=(rec.resting||[]).slice();
     state.reentered=(rec.reentered||[]).slice();
     renderProgram();
@@ -491,8 +488,8 @@ function fixedAssignments(){
     if(p.doesOrdinary)add(p.task,p.name,'Paciente '+(i+1));
   });
 
-  if(state.hasPatients&&$('linkEv').checked){
-    add('evangelio',$('worker').value,'Vibración por trabajador');
+  if(state.hasPatients){
+    add(workerReadingTask(),$('worker').value,'Vibración por trabajador');
   }
 
   return {fixed:fixed,error:error};
@@ -504,13 +501,17 @@ function configError(){
   if(!patients.length||!patients[0].name)return 'Selecciona al menos el Paciente trabajador 1.';
   if(patients.length===2&&patients[0].name===patients[1].name)return 'Los dos pacientes deben ser personas diferentes.';
 
+  const worker=$('worker').value;
+  const reading=workerReadingTask();
+  if(reading!=='pan'&&reading!=='evangelio')return 'Selecciona Pan Nuestro o Evangelio para Vibración por trabajador.';
+  if(person(worker).noPan&&reading==='pan')return 'Anita Suárez no realiza la lectura de Pan Nuestro.';
   const shift=previewShift();
 
   for(let i=0;i<patients.length;i++){
     const p=patients[i];
     if(p.doesOrdinary){
       if(!p.task)return 'Selecciona la actividad del paciente '+(i+1)+'.';
-      if(!canProgress(p.name,p.task,shift)){
+      if(!isWorkerReading(p.name,p.task)&&!canProgress(p.name,p.task,shift)){
         return p.name+' no puede realizar '+taskShort(p.task)+' porque repetiría o retrocedería en la rotación.';
       }
     }
@@ -520,17 +521,9 @@ function configError(){
     return 'Los dos pacientes no pueden ocupar la misma actividad ordinaria.';
   }
 
-  if($('linkEv').checked&&!canProgress($('worker').value,'evangelio',shift)){
-    return $('worker').value+' no puede realizar Evangelio porque repetiría o retrocedería.';
-  }
-
-  const worker=$('worker').value;
   const pSame=patients.find(function(p){return p.name===worker;});
-  if(pSame&&!pSame.doesOrdinary&&$('linkEv').checked){
-    return worker+' está configurado únicamente como paciente y no puede quedar también en Evangelio.';
-  }
-  if(pSame&&pSame.doesOrdinary&&$('linkEv').checked&&pSame.task!=='evangelio'){
-    return worker+' ya tiene una actividad ordinaria como paciente y no puede tener además Evangelio.';
+  if(pSame&&(!pSame.doesOrdinary||pSame.task!==reading)){
+    return worker+' debe tener la misma lectura como paciente y como responsable de Vibración por trabajador.';
   }
 
   return '';
@@ -550,8 +543,6 @@ function chooseOrdinaryPeople(prev,forcedNames){
     }
   });
 
-  const worker=state.hasPatients?$('worker').value:null;
-  const linked=state.hasPatients&&$('linkEv').checked;
   const hectorFixed=forcedNames.has('Hector');
   const targetNonHector=8-(hectorFixed?1:0);
 
@@ -563,13 +554,6 @@ function chooseOrdinaryPeople(prev,forcedNames){
   while(names.length>targetNonHector){
     const protectedNames=new Set(returning.concat(newcomers).concat(Array.from(forcedNames)));
     let remove=null;
-
-    if(worker&&worker!=='Hector'&&!linked&&names.indexOf(worker)>=0&&!forcedNames.has(worker)){
-      remove=worker;
-      names=names.filter(function(n){return n!==remove;});
-      if(state.specialOnly.indexOf(remove)<0)state.specialOnly.push(remove);
-      continue;
-    }
 
     const finalPrev=prev&&prev.ordinary?prev.ordinary.final:null;
     if(finalPrev&&names.indexOf(finalPrev)>=0&&!protectedNames.has(finalPrev)){
@@ -592,6 +576,7 @@ function allowedByProgress(prev,name,task,shift){
   if(person(name).noPan&&task==='pan')return false;
   const old=oldTask(prev,name);
   if(!old)return true;
+  if(old===task)return false;
   const oldIndex=idx(old),newIndex=idx(task);
   const minAbs=oldIndex+shift;
   if(minAbs<ORDINARY.length)return newIndex>=minAbs;
@@ -605,7 +590,7 @@ function prevalidateFixed(prev,fixed,shift){
     if(seen[name]&&seen[name]!==task)return name+' no puede tener dos actividades ordinarias.';
     seen[name]=task;
     if(person(name).noPan&&task==='pan')return 'Anita Suárez no realiza la lectura de Pan Nuestro.';
-    if(!allowedByProgress(prev,name,task,shift)){
+    if(!isWorkerReading(name,task)&&!allowedByProgress(prev,name,task,shift)){
       return name+' no puede pasar a '+taskShort(task)+' porque repetiría o retrocedería respecto al miércoles anterior.';
     }
   }
@@ -629,7 +614,7 @@ function solve(prev,names,shift,fixed){
     }
 
     if(name==='Hector'&&!fixedNames.has('Hector')&&names.length>=8)return false;
-    return allowedByProgress(prev,name,task,shift);
+    return isWorkerReading(name,task)||allowedByProgress(prev,name,task,shift);
   }
 
   function score(name,task){
@@ -744,11 +729,12 @@ function basicOptionRestriction(prev,name,task){
     if(p.task!==task)return 'Paciente fijado a '+taskShort(p.task);
   }
 
-  if(state.hasPatients&&$('linkEv').checked&&name===$('worker').value&&task!=='evangelio'){
-    return 'Vinculado a Evangelio';
+  if(state.hasPatients&&name===$('worker').value){
+    return isWorkerReading(name,task)?'':'Vinculado a '+taskShort(workerReadingTask());
   }
+  if(workerReadingTask()===task)return 'Lectura asociada a Vibración por trabajador';
 
-  if(!allowedByProgress(prev,name,task,state.shift)){
+  if(!isWorkerReading(name,task)&&!allowedByProgress(prev,name,task,state.shift)){
     const old=oldTask(prev,name);
     return old===task?'Misma actividad anterior':'Retroceso';
   }
@@ -781,13 +767,11 @@ function renderProgram(){
   }
 
   const prev=previousMeeting();
-  const linkedWorker=state.hasPatients&&$('linkEv').checked?$('worker').value:null;
-
   let html=ORDINARY.map(function(t){
     const name=state.schedule[t.id];
     const previousResponsible=(prev&&prev.ordinary&&prev.ordinary[t.id])||'—';
     const fixedPatient=patientFixedTask(name)===t.id;
-    const isLinked=t.id==='evangelio'&&linkedWorker===name;
+    const isLinked=isWorkerReading(name,t.id);
     const disabled=fixedPatient||isLinked;
 
     return '<div class="row"><div class="task">'+taskLabel(t.id)+'<small>'+previousResponsible+'</small></div><select data-task="'+t.id+'" '+(disabled?'disabled':'')+'>'+selectOptions(t.id,name)+'</select></div>';
@@ -845,6 +829,11 @@ function renderProgram(){
 
 function validateSchedule(){
   if(!state.schedule)return state.error||'Primero genera una programación válida.';
+  const cfg=configError();
+  if(cfg)return cfg;
+  if(state.hasPatients&&state.schedule[workerReadingTask()]!==$('worker').value){
+    return 'Genera la programación con la lectura asociada seleccionada.';
+  }
   const names=Object.values(state.schedule);
   if(new Set(names).size!==ORDINARY.length)return 'Hay una persona repetida dentro de las actividades ordinarias.';
   if(state.schedule.pan==='Anita Suarez')return 'Anita Suárez no realiza la lectura de Pan Nuestro.';
@@ -852,7 +841,7 @@ function validateSchedule(){
   const prev=previousMeeting();
   for(const task in state.schedule){
     const name=state.schedule[task];
-    if(!allowedByProgress(prev,name,task,state.shift)){
+    if(!isWorkerReading(name,task)&&!allowedByProgress(prev,name,task,state.shift)){
       return name+' quedó en una actividad que repite o retrocede respecto al miércoles anterior.';
     }
   }
@@ -861,8 +850,12 @@ function validateSchedule(){
 
 function saveCurrentSchedule(){
   const b=currentBook();
+  const worker=state.hasPatients?$('worker').value:null;
+  const reading=workerReadingTask();
+  let rotationTask=worker?nextTask(oldTask(previousMeeting(),worker),state.shift):null;
+  if(worker&&person(worker).noPan&&rotationTask==='pan')rotationTask='evangelio';
   const record={
-    schemaVersion:5,
+    schemaVersion:6,
     date:$('date').value,
     bookId:b.id,
     bookName:b.name,
@@ -874,7 +867,8 @@ function saveCurrentSchedule(){
       patients:currentPatients(),
       workerVibration:state.hasPatients?$('worker').value:null,
       readingPatients:'Hector',
-      evangelioWithVibration:state.hasPatients&&$('linkEv').checked
+      workerReading:reading||null,
+      workerRotationTask:rotationTask||reading||null
     },
     resting:state.resting.slice(),
     reentered:state.reentered.slice()
@@ -975,8 +969,18 @@ $('pYes').addEventListener('click',function(){setPatientUI(true);clearGenerated(
   $('patient'+i+'Task').addEventListener('change',clearGenerated);
 });
 
-$('worker').addEventListener('change',function(){syncWorkerRule();clearGenerated();});
-$('linkEv').addEventListener('change',clearGenerated);
+$('worker').addEventListener('change',function(){
+  $('workerReading').value='';
+  syncWorkerRule();
+  refreshPatientTaskOptions(1);
+  refreshPatientTaskOptions(2);
+  clearGenerated();
+});
+$('workerReading').addEventListener('change',function(){
+  refreshPatientTaskOptions(1);
+  refreshPatientTaskOptions(2);
+  clearGenerated();
+});
 $('generate').addEventListener('click',function(){computeSchedule(true);});
 $('makeMsg').addEventListener('click',generateMessage);
 $('greeting').addEventListener('click',function(){state.greeting++;generateMessage();});

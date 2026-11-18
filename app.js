@@ -133,7 +133,7 @@ function previousMeeting(){
 
 function oldTask(prev,name){
   const specials=prev&&prev.specials;
-  if(specials&&specials.workerVibration===name&&specials.workerRotationTask){
+  if(specials&&specials.workerVibration===name&&Object.hasOwn(specials,'workerRotationTask')){
     return specials.workerRotationTask;
   }
   const entries=Object.entries((prev&&prev.ordinary)||{});
@@ -175,19 +175,6 @@ function normalizePatients(record){
     return [{name:sp.patientWorker,doesOrdinary:!!t,task:t}];
   }
   return [];
-}
-
-function migrateV5(){
-  if(localStorage.getItem('vibraciones_v5_migrated')==='1')return;
-  const migrated=history().map(function(rec){
-    const sp=Object.assign({},rec.specials||{});
-    if(!Array.isArray(sp.patients)){
-      sp.patients=normalizePatients(rec);
-    }
-    return Object.assign({},rec,{schemaVersion:5,specials:sp});
-  });
-  saveHistory(migrated);
-  localStorage.setItem('vibraciones_v5_migrated','1');
 }
 
 function derivedRestQueue(beforeDate){
@@ -297,7 +284,7 @@ function syncPatientChoices(){
 function refreshSpecialSelects(saved){
   const list=selected();
   const oldP1=(saved&&saved.patients&&saved.patients[0]&&saved.patients[0].name)||$('patient1').value;
-  const oldP2=(saved&&saved.patients&&saved.patients[1]&&saved.patients[1].name)||$('patient2').value;
+  const oldP2=saved?(saved.patients[1]&&saved.patients[1].name):$('patient2').value;
   const oldWorker=(saved&&saved.workerVibration)||$('worker').value;
 
   $('patient1').innerHTML=optionList(list,false);
@@ -377,7 +364,12 @@ function refreshPatientTaskOptions(i){
 }
 
 function workerReadingTask(){
-  return state.hasPatients?$('workerReading').value:'';
+  const reading=$('workerReading').value;
+  return state.hasPatients&&(reading==='pan'||reading==='evangelio')?reading:'';
+}
+
+function workerWithoutReading(){
+  return state.hasPatients&&person($('worker').value).coordinator&&$('workerReading').value==='none';
 }
 
 function isWorkerReading(name,task){
@@ -386,9 +378,14 @@ function isWorkerReading(name,task){
 
 function syncWorkerRule(){
   const reading=$('workerReading');
-  const noPan=person($('worker').value).noPan;
-  reading.options[1].disabled=!!noPan;
-  if(state.hasPatients&&noPan)reading.value='evangelio';
+  const worker=person($('worker').value);
+  const previous=reading.value;
+  reading.replaceChildren(new Option('Selecciona una actividad',''));
+  if(!worker.noPan)reading.add(new Option('Pan Nuestro','pan'));
+  reading.add(new Option('Evangelio','evangelio'));
+  if(worker.coordinator)reading.add(new Option('Ninguna','none'));
+  if(worker.noPan)reading.value='evangelio';
+  else if(Array.from(reading.options).some(function(o){return o.value===previous;}))reading.value=previous;
 }
 
 function loadDateState(){
@@ -420,13 +417,11 @@ function loadDateState(){
       $('patient1').value=patients[0].name;
       $('patient1Ordinary').checked=!!patients[0].doesOrdinary;
       refreshPatientTaskOptions(1);
-      if(patients[0].task)$('patient1Task').value=patients[0].task;
     }
     if(patients[1]){
       $('patient2').value=patients[1].name;
       $('patient2Ordinary').checked=!!patients[1].doesOrdinary;
       refreshPatientTaskOptions(2);
-      if(patients[1].task)$('patient2Task').value=patients[1].task;
     }else{
       $('patient2').value='';
       $('patient2Ordinary').checked=false;
@@ -434,9 +429,15 @@ function loadDateState(){
     }
     if(rec&&rec.specials&&rec.specials.workerVibration)$('worker').value=rec.specials.workerVibration;
     const specials=rec.specials||{};
-    $('workerReading').value=specials.workerReading||(specials.evangelioWithVibration?'evangelio':'');
     syncPatientChoices();
     syncWorkerRule();
+    $('workerReading').value=specials.workerReading||(specials.evangelioWithVibration?'evangelio':'');
+    syncWorkerRule();
+    refreshPatientTaskOptions(1);
+    refreshPatientTaskOptions(2);
+    patients.forEach(function(p,i){
+      if(p.task)$('patient'+(i+1)+'Task').value=p.task;
+    });
   }else{
     $('patient1Ordinary').checked=false;
     $('patient2Ordinary').checked=false;
@@ -503,7 +504,7 @@ function configError(){
 
   const worker=$('worker').value;
   const reading=workerReadingTask();
-  if(reading!=='pan'&&reading!=='evangelio')return 'Selecciona Pan Nuestro o Evangelio para Vibración por trabajador.';
+  if(!reading&&!workerWithoutReading())return 'Selecciona la actividad asociada a Vibración por trabajador.';
   if(person(worker).noPan&&reading==='pan')return 'Anita Suárez no realiza la lectura de Pan Nuestro.';
   const shift=previewShift();
 
@@ -522,7 +523,10 @@ function configError(){
   }
 
   const pSame=patients.find(function(p){return p.name===worker;});
-  if(pSame&&(!pSame.doesOrdinary||pSame.task!==reading)){
+  if(pSame&&workerWithoutReading()&&pSame.doesOrdinary){
+    return 'Para elegir Ninguna, deja a Héctor como solo paciente.';
+  }
+  if(pSame&&reading&&(!pSame.doesOrdinary||pSame.task!==reading)){
     return worker+' debe tener la misma lectura como paciente y como responsable de Vibración por trabajador.';
   }
 
@@ -601,7 +605,7 @@ function solve(prev,names,shift,fixed){
   let pool=names.slice();
   const fixedNames=new Set(Object.values(fixed));
 
-  if((pool.length<8||fixedNames.has('Hector'))&&pool.indexOf('Hector')<0)pool.push('Hector');
+  if(!workerWithoutReading()&&(pool.length<8||fixedNames.has('Hector'))&&pool.indexOf('Hector')<0)pool.push('Hector');
   if(pool.length<8)return null;
   if(pool.length>8)return null;
 
@@ -730,7 +734,7 @@ function basicOptionRestriction(prev,name,task){
   }
 
   if(state.hasPatients&&name===$('worker').value){
-    return isWorkerReading(name,task)?'':'Vinculado a '+taskShort(workerReadingTask());
+    return isWorkerReading(name,task)?'':workerWithoutReading()?'Sin actividad ordinaria':'Vinculado a '+taskShort(workerReadingTask());
   }
   if(workerReadingTask()===task)return 'Lectura asociada a Vibración por trabajador';
 
@@ -831,10 +835,11 @@ function validateSchedule(){
   if(!state.schedule)return state.error||'Primero genera una programación válida.';
   const cfg=configError();
   if(cfg)return cfg;
-  if(state.hasPatients&&state.schedule[workerReadingTask()]!==$('worker').value){
+  if(workerReadingTask()&&state.schedule[workerReadingTask()]!==$('worker').value){
     return 'Genera la programación con la lectura asociada seleccionada.';
   }
   const names=Object.values(state.schedule);
+  if(workerWithoutReading()&&names.includes('Hector'))return 'Genera la programación con Héctor sin actividad ordinaria.';
   if(new Set(names).size!==ORDINARY.length)return 'Hay una persona repetida dentro de las actividades ordinarias.';
   if(state.schedule.pan==='Anita Suarez')return 'Anita Suárez no realiza la lectura de Pan Nuestro.';
 
@@ -855,7 +860,7 @@ function saveCurrentSchedule(){
   let rotationTask=worker?nextTask(oldTask(previousMeeting(),worker),state.shift):null;
   if(worker&&person(worker).noPan&&rotationTask==='pan')rotationTask='evangelio';
   const record={
-    schemaVersion:6,
+    schemaVersion:7,
     date:$('date').value,
     bookId:b.id,
     bookName:b.name,
@@ -867,8 +872,8 @@ function saveCurrentSchedule(){
       patients:currentPatients(),
       workerVibration:state.hasPatients?$('worker').value:null,
       readingPatients:'Hector',
-      workerReading:reading||null,
-      workerRotationTask:rotationTask||reading||null
+      workerReading:workerWithoutReading()?'none':reading||null,
+      workerRotationTask:rotationTask
     },
     resting:state.resting.slice(),
     reentered:state.reentered.slice()
@@ -1026,7 +1031,6 @@ $('saveBook').addEventListener('click',addBook);
 $('date').addEventListener('change',loadDateState);
 
 function init(){
-  migrateV5();
   $('date').value=isoToday();
   initBooks();
   loadDateState();
@@ -1036,3 +1040,4 @@ function init(){
 }
 
 init();
+

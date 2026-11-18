@@ -1,4 +1,4 @@
-# Coordinador de Vibraciones — v7.0
+# Coordinador de Vibraciones — v7.0.1
 
 PWA para preparar y compartir la programación semanal de la reunión de vibraciones.
 
@@ -9,6 +9,8 @@ PWA para preparar y compartir la programación semanal de la reunión de vibraci
 - El reinicio después de Oración final continúa hacia el comienzo de un nuevo ciclo.
 - Anita Suarez no realiza Pan Nuestro; cuando su turno cae allí se conserva la regla especial de avance de la rueda.
 - El motor prioriza el siguiente turno válido y solo salta hacia adelante cuando las restricciones lo requieren.
+- El motor elige al mismo tiempo la distribución y quién descansa, para evitar combinaciones imposibles causadas por una exclusión prematura.
+- El paso de Oración final al inicio se reconoce como continuidad del ciclo.
 
 ## Pacientes trabajadores
 - Se pueden registrar hasta dos pacientes trabajadores.

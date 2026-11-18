@@ -461,9 +461,12 @@ function loadDateState(){
 }
 
 function determineShift(prev,names){
-  if(!prev)return 1;
-  const old=oldTask(prev,'Anita Suarez');
-  if(names.indexOf('Anita Suarez')>=0&&old&&nextTask(old,1)==='pan')return 2;
+  return 1;
+}
+
+function progressStep(prev,name){
+  const old=oldTask(prev,name);
+  if(person(name).noPan&&old&&nextTask(old,1)==='pan')return 2;
   return 1;
 }
 
@@ -547,31 +550,9 @@ function chooseOrdinaryPeople(prev,forcedNames){
     }
   });
 
-  const hectorFixed=forcedNames.has('Hector');
-  const targetNonHector=8-(hectorFixed?1:0);
-
   const queue=derivedRestQueue($('date').value);
   const returning=queue.filter(function(n){return names.indexOf(n)>=0;});
-  const newcomers=names.filter(function(n){return !oldTask(prev,n);});
   state.reentered=returning.slice();
-
-  while(names.length>targetNonHector){
-    const protectedNames=new Set(returning.concat(newcomers).concat(Array.from(forcedNames)));
-    let remove=null;
-
-    const finalPrev=prev&&prev.ordinary?prev.ordinary.final:null;
-    if(finalPrev&&names.indexOf(finalPrev)>=0&&!protectedNames.has(finalPrev)){
-      remove=finalPrev;
-    }
-
-    if(!remove){
-      remove=names.find(function(n){return !protectedNames.has(n);})||names.find(function(n){return !forcedNames.has(n);})||null;
-    }
-
-    if(!remove)break;
-    names=names.filter(function(n){return n!==remove;});
-    state.resting.push(remove);
-  }
 
   return names;
 }
@@ -580,11 +561,7 @@ function allowedByProgress(prev,name,task,shift){
   if(person(name).noPan&&task==='pan')return false;
   const old=oldTask(prev,name);
   if(!old)return true;
-  if(old===task)return false;
-  const oldIndex=idx(old),newIndex=idx(task);
-  const minAbs=oldIndex+shift;
-  if(minAbs<ORDINARY.length)return newIndex>=minAbs;
-  return newIndex>=(minAbs%ORDINARY.length);
+  return dist(old,task)>=progressStep(prev,name);
 }
 
 function prevalidateFixed(prev,fixed,shift){
@@ -607,7 +584,6 @@ function solve(prev,names,shift,fixed){
 
   if(!workerWithoutReading()&&(pool.length<8||fixedNames.has('Hector'))&&pool.indexOf('Hector')<0)pool.push('Hector');
   if(pool.length<8)return null;
-  if(pool.length>8)return null;
 
   function allowed(name,task){
     if(person(name).noPan&&task==='pan')return false;
@@ -623,10 +599,13 @@ function solve(prev,names,shift,fixed){
 
   function score(name,task){
     const old=oldTask(prev,name);
-    if(!old)return 40-idx(task)/100;
+    let participation=0;
+    if(state.reentered.indexOf(name)>=0||!old)participation=10000;
+    else if(prev&&prev.ordinary&&prev.ordinary.final!==name)participation=1000;
+    if(!old)return participation+40-idx(task)/100;
     const d=dist(old,task);
-    if(d===shift)return 500;
-    return 300-d*25;
+    if(d===progressStep(prev,name))return participation+500;
+    return participation+300-d*25;
   }
 
   const assign={},used=new Set();
@@ -700,12 +679,22 @@ function computeSchedule(resetManual){
   const result=solve(prev,names,state.shift,fixed);
   if(!result){
     state.schedule=null;
-    state.error='No existe una combinación completa que permita avanzar a todos sin repetir ni retroceder. Revisa los pacientes, las actividades fijadas o los participantes.';
+    const available=names.length+(workerWithoutReading()?0:(names.indexOf('Hector')<0?1:0));
+    if(available<ORDINARY.length){
+      const missing=ORDINARY.length-available;
+      state.error='Faltan '+missing+' '+(missing===1?'persona':'personas')+' para cubrir las ocho actividades ordinarias. Asigna una actividad ordinaria a '+(missing===1?'un paciente':'los pacientes')+' o cambia la actividad asociada de Héctor.';
+    }else{
+      state.error='Las actividades fijadas no permiten completar la rueda sin repetir ni retroceder. Cambia una actividad exacta de los pacientes y vuelve a generar.';
+    }
     renderProgram();
     return false;
   }
 
   state.schedule=result;
+  const scheduledNames=new Set(Object.values(result));
+  state.resting=names.filter(function(name){
+    return !scheduledNames.has(name)&&state.specialOnly.indexOf(name)<0;
+  });
   renderProgram();
   return true;
 }
@@ -857,8 +846,9 @@ function saveCurrentSchedule(){
   const b=currentBook();
   const worker=state.hasPatients?$('worker').value:null;
   const reading=workerReadingTask();
-  let rotationTask=worker?nextTask(oldTask(previousMeeting(),worker),state.shift):null;
-  if(worker&&person(worker).noPan&&rotationTask==='pan')rotationTask='evangelio';
+  const prev=previousMeeting();
+  const oldWorkerTask=worker?oldTask(prev,worker):null;
+  const rotationTask=oldWorkerTask?nextTask(oldWorkerTask,progressStep(prev,worker)):null;
   const record={
     schemaVersion:7,
     date:$('date').value,

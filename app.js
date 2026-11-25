@@ -369,7 +369,7 @@ function workerReadingTask(){
 }
 
 function workerWithoutReading(){
-  return state.hasPatients&&person($('worker').value).coordinator&&$('workerReading').value==='none';
+  return state.hasPatients&&$('workerReading').value==='none';
 }
 
 function isWorkerReading(name,task){
@@ -383,9 +383,9 @@ function syncWorkerRule(){
   reading.replaceChildren(new Option('Selecciona una actividad',''));
   if(!worker.noPan)reading.add(new Option('Pan Nuestro','pan'));
   reading.add(new Option('Evangelio','evangelio'));
-  if(worker.coordinator)reading.add(new Option('Ninguna','none'));
-  if(worker.noPan)reading.value='evangelio';
-  else if(Array.from(reading.options).some(function(o){return o.value===previous;}))reading.value=previous;
+  reading.add(new Option('Ninguna','none'));
+  if(Array.from(reading.options).some(function(o){return o.value===previous;}))reading.value=previous;
+  else if(worker.noPan)reading.value='evangelio';
 }
 
 function loadDateState(){
@@ -527,7 +527,7 @@ function configError(){
 
   const pSame=patients.find(function(p){return p.name===worker;});
   if(pSame&&workerWithoutReading()&&pSame.doesOrdinary){
-    return 'Para elegir Ninguna, deja a Héctor como solo paciente.';
+    return 'Para elegir Ninguna, deja a '+worker+' como solo paciente.';
   }
   if(pSame&&reading&&(!pSame.doesOrdinary||pSame.task!==reading)){
     return worker+' debe tener la misma lectura como paciente y como responsable de Vibración por trabajador.';
@@ -549,6 +549,12 @@ function chooseOrdinaryPeople(prev,forcedNames){
       if(state.specialOnly.indexOf(p.name)<0)state.specialOnly.push(p.name);
     }
   });
+
+  if(workerWithoutReading()){
+    const worker=$('worker').value;
+    names=names.filter(function(n){return n!==worker;});
+    if(state.specialOnly.indexOf(worker)<0)state.specialOnly.push(worker);
+  }
 
   const queue=derivedRestQueue($('date').value);
   const returning=queue.filter(function(n){return names.indexOf(n)>=0;});
@@ -582,7 +588,8 @@ function solve(prev,names,shift,fixed){
   let pool=names.slice();
   const fixedNames=new Set(Object.values(fixed));
 
-  if(!workerWithoutReading()&&(pool.length<8||fixedNames.has('Hector'))&&pool.indexOf('Hector')<0)pool.push('Hector');
+  const hectorUnavailable=workerWithoutReading()&&$('worker').value==='Hector';
+  if(!hectorUnavailable&&(pool.length<8||fixedNames.has('Hector'))&&pool.indexOf('Hector')<0)pool.push('Hector');
   if(pool.length<8)return null;
 
   function allowed(name,task){
@@ -679,10 +686,11 @@ function computeSchedule(resetManual){
   const result=solve(prev,names,state.shift,fixed);
   if(!result){
     state.schedule=null;
-    const available=names.length+(workerWithoutReading()?0:(names.indexOf('Hector')<0?1:0));
+    const hectorAvailable=!(workerWithoutReading()&&$('worker').value==='Hector');
+    const available=names.length+(hectorAvailable&&names.indexOf('Hector')<0?1:0);
     if(available<ORDINARY.length){
       const missing=ORDINARY.length-available;
-      state.error='Faltan '+missing+' '+(missing===1?'persona':'personas')+' para cubrir las ocho actividades ordinarias. Asigna una actividad ordinaria a '+(missing===1?'un paciente':'los pacientes')+' o cambia la actividad asociada de Héctor.';
+      state.error='Faltan '+missing+' '+(missing===1?'persona':'personas')+' para cubrir las ocho actividades ordinarias. Asigna una actividad ordinaria a '+(missing===1?'un paciente':'los pacientes')+' o cambia la opción Ninguna del responsable.';
     }else{
       state.error='Las actividades fijadas no permiten completar la rueda sin repetir ni retroceder. Cambia una actividad exacta de los pacientes y vuelve a generar.';
     }
@@ -828,7 +836,7 @@ function validateSchedule(){
     return 'Genera la programación con la lectura asociada seleccionada.';
   }
   const names=Object.values(state.schedule);
-  if(workerWithoutReading()&&names.includes('Hector'))return 'Genera la programación con Héctor sin actividad ordinaria.';
+  if(workerWithoutReading()&&names.includes($('worker').value))return 'Genera la programación con el responsable de Vibración por trabajador sin actividad ordinaria.';
   if(new Set(names).size!==ORDINARY.length)return 'Hay una persona repetida dentro de las actividades ordinarias.';
   if(state.schedule.pan==='Anita Suarez')return 'Anita Suárez no realiza la lectura de Pan Nuestro.';
 
@@ -850,7 +858,7 @@ function saveCurrentSchedule(){
   const oldWorkerTask=worker?oldTask(prev,worker):null;
   const rotationTask=oldWorkerTask?nextTask(oldWorkerTask,progressStep(prev,worker)):null;
   const record={
-    schemaVersion:7,
+    schemaVersion:8,
     date:$('date').value,
     bookId:b.id,
     bookName:b.name,

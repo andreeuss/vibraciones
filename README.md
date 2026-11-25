@@ -1,4 +1,4 @@
-# Coordinador de Vibraciones — v7.0.1
+# Coordinador de Vibraciones — v8.0
 
 PWA para preparar y compartir la programación semanal de la reunión de vibraciones.
 
@@ -20,9 +20,10 @@ PWA para preparar y compartir la programación semanal de la reunión de vibraci
 - Si realiza actividad, se selecciona una actividad exacta.
 - El selector bloquea tareas que impliquen repetir, retroceder o asignar Pan Nuestro a Anita Suarez.
 - Dos pacientes no pueden ocupar la misma actividad ordinaria.
-- Cuando hay pacientes, el coordinador elige Pan Nuestro o Evangelio para quien realiza Vibración por trabajador. Puede elegir la misma lectura en semanas consecutivas. Para Anita Suárez, la única opción es Evangelio.
-- Si Héctor realiza Vibración por trabajador, también puede elegir **Ninguna**. En ese caso conserva Lectura de pacientes y los demás cubren las ocho actividades ordinarias.
-- Si el responsable también figura como paciente y elige una lectura, su actividad debe coincidir con esa lectura. Si Héctor elige Ninguna, puede figurar como solo paciente.
+- Cuando hay pacientes, el coordinador elige Pan Nuestro, Evangelio o Ninguna para quien realiza Vibración por trabajador. La opción puede repetirse en semanas consecutivas.
+- Anita Suárez puede elegir Evangelio o Ninguna, pero nunca Pan Nuestro.
+- Si se elige Ninguna, el responsable no ocupa una actividad ordinaria por esta función y los demás cubren la rueda.
+- Si el responsable también figura como paciente y elige una lectura, su actividad debe coincidir con esa lectura. Si elige Ninguna, puede figurar como solo paciente.
 - El historial guarda el turno que le correspondía al responsable en la rueda. Si su turno era Vibración espiritual y realiza Evangelio, la semana siguiente avanza desde Vibración espiritual hacia Vibración familias.
 - Cuando el responsable carece de un turno previo, la actividad asociada deja su posición ordinaria sin establecer.
 
